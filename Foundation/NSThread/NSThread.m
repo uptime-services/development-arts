@@ -76,12 +76,18 @@ static void *nsThreadStartThread(void* t)
 	NSPlatformSetCurrentThread(thread);
 	[thread setExecuting:YES];
     NSCooperativeThreadWaiting();
-   [thread main];
+	@try {
+		[thread main];
+	}
+	@catch (NSException * e) {
+		// maybe exception should be logged?
+	}
 	[thread setExecuting:NO];
 	[thread setFinished:YES];
-   [thread release];
-   NSSelectSetShutdownForCurrentThread();
-   NSPlatformSetCurrentThread(nil);
+	[thread release];
+	NSSelectSetShutdownForCurrentThread();
+	NSPlatformSetCurrentThread(nil);
+	
 	return 0;
 }
 

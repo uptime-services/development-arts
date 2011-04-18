@@ -241,5 +241,3 @@ int mkstemps(char *template,int suffixlen) {
 }
 
 #endif
-
-
