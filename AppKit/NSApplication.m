@@ -1161,8 +1161,6 @@ standardAboutPanel] retain];
 @end
 
 int NSApplicationMain(int argc, const char *argv[]) {
-   NSInitializeProcess(argc,(const char **)argv);
-   {
     NSAutoreleasePool *pool=[NSAutoreleasePool new];
     NSBundle *bundle=[NSBundle mainBundle];
     Class     class=[bundle principalClass];
@@ -1181,7 +1179,6 @@ int NSApplicationMain(int argc, const char *argv[]) {
     [pool release];
 
     [NSApp run];
-   }
    return 0;
 }
 
