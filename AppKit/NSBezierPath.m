@@ -705,7 +705,7 @@ static inline CGFloat degreesToRadians(CGFloat degrees){
 }
 
 -(void)appendBezierPathWithGlyphs:(NSGlyph *)glyphs count:(unsigned)count inFont:(NSFont *)font {
-	int i = 0;
+	int i;
 	for (i = 0; i < count; ++i) {
 		[self appendBezierPathWithGlyph:glyphs[i] inFont:font];
 	}
@@ -868,8 +868,8 @@ static NSUInteger flattenBezierCurve(float desiredFlatness, CGPoint start, CGPoi
 	[path moveToPoint: [self currentPoint]];
 	
 	BOOL closed = NO; // state of current subpath
-	
-	int i = 0;
+
+	int i;
 	for ( i = [self elementCount] - 1; i >= 0; i--) 
     {
 		// Find the next point : it's the end of previous element in the original path
