@@ -436,8 +436,34 @@ Ivar *class_copyIvarList(Class cls,unsigned int *countp) {
 }
 
 Method *class_copyMethodList(Class cls,unsigned int *countp) {
-   // UNIMPLEMENTED
-   return NULL;
+    int methodCount = 0;
+    void *iterator = 0;
+    struct objc_method_list *list;
+    Method *result = NULL;
+    int j = 0;
+    
+    while((list = class_nextMethodList(cls, &iterator)) != NULL)
+    {
+        methodCount += list->method_count;
+    }
+    
+    if(countp != NULL) {
+        *countp = methodCount;
+    }
+    
+    result=malloc(sizeof(Method)*methodCount);
+    iterator = 0;
+    
+    while((list = class_nextMethodList(cls, &iterator)) != NULL)
+    {
+        int mCount = list->method_count;
+        for(int i = 0;i < mCount; i++) {
+            result[j] = &list->method_list[i];
+            j++;
+        }
+    }
+    
+    return result;
 }
 
 objc_property_t *class_copyPropertyList(Class cls,unsigned int *countp) {
@@ -613,12 +639,26 @@ BOOL class_addMethod(Class cls, SEL name, IMP imp, const char *types) {
 }
 
 BOOL class_addProtocol(Class cls,Protocol *protocol) {
-   // UNIMPLEMENTED
-   return NO;
+	//TODO: check if protocol already exists
+	
+	struct objc_protocol_list *protocolList = malloc(sizeof(struct objc_protocol_list));
+	protocolList->next = 0;
+	protocolList->list[0] = protocol;
+    protocolList->count = 1;
+	struct objc_protocol_list *protoList = cls->protocols;
+	struct objc_protocol_list *lastList = protoList;
+	while((protoList=protoList->next) != NULL) {
+		lastList = protoList;
+	}
+	lastList->next = protocolList;
+	return YES;
 }
 
 BOOL class_conformsToProtocol(Class class,Protocol *protocol) {
 
+   if (class == Nil) {
+        return NO;
+   }
    for(;;class=class->super_class){
     struct objc_protocol_list *protoList=class->protocols;
 
@@ -762,9 +802,12 @@ void OBJCRegisterCategoryInClass(Category category,Class class) {
 
    for(protos=category->protocols;protos!=NULL;protos=protos->next){
     unsigned i;
-
-    for (i=0;i<protos->count;i++)
-     OBJCRegisterProtocol((OBJCProtocolTemplate *)protos->list[i]);
+	   
+	   for (i=0;i<protos->count;i++) {
+		   OBJCRegisterProtocol((OBJCProtocolTemplate *)protos->list[i]);
+		   //add protocols from category to class
+		   class_addProtocol(class, protos->list[i]);
+	   }
    }
 }
 

@@ -36,6 +36,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSData.h>
+#import <Foundation/NSDictionary.h>
 #import <Foundation/NSCharacterSet.h>
 #import <Foundation/NSLocale.h>
 
@@ -586,16 +587,23 @@ static inline BOOL isEqualString(NSString *str1,NSString *str2){
     if(length1==0)
      return YES;
     else {
-     unichar  buffer1[length1],buffer2[length2];
+    unichar  *buffer1 = NSZoneMalloc(NULL, sizeof(unichar) * length1); 
+    unichar  *buffer2 = NSZoneMalloc(NULL, sizeof(unichar) * length2); 
+
      int      i;
 
      [str1 getCharacters:buffer1];
      [str2 getCharacters:buffer2];
 
-     for(i=0;i<length1;i++)
-      if(buffer1[i]!=buffer2[i])
-       return NO;
-
+     for(i=0;i<length1;i++) {
+         if(buffer1[i]!=buffer2[i]) {
+             NSZoneFree(NULL, buffer1);
+             NSZoneFree(NULL, buffer2);
+           return NO;
+         }
+      }
+     NSZoneFree(NULL, buffer1);
+     NSZoneFree(NULL, buffer2);
      return YES;
     }
    }
@@ -825,7 +833,11 @@ static inline void reverseString(unichar *buf, NSUInteger len) {
 
 -(void)getLineStart:(NSUInteger *)startp end:(NSUInteger *)endp contentsEnd:(NSUInteger *)contentsEndp forRange:(NSRange)range {
    NSUInteger start=range.location;
-   NSUInteger end=NSMaxRange(range);
+   NSUInteger maxRange = NSMaxRange(range);
+   if (maxRange == 0) {
+        maxRange = 1;
+   }
+   NSUInteger end=maxRange - 1;
    NSUInteger contentsEnd=end;
    NSUInteger length=[self length];
    unichar  buffer[length];
@@ -902,7 +914,11 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
  The difference is that getParagraphStart: does not delimit on line terminators 0x0085 and 0x2028
  */
    NSUInteger start=range.location;
-   NSUInteger end=NSMaxRange(range);
+    NSUInteger maxRange = NSMaxRange(range);
+    if (maxRange == 0) {
+        maxRange = 1;
+    }
+   NSUInteger end=maxRange - 1;
    NSUInteger contentsEnd=end;
    NSUInteger length=[self length];
    unichar  buffer[length];
@@ -1405,7 +1421,8 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
 -(NSData *)dataUsingEncoding:(NSStringEncoding)encoding allowLossyConversion:(BOOL)lossy {
    NSZone  *zone=[self zone];
    NSUInteger length=[self length];
-   unichar  buffer[1+length],*unicode=buffer+1;
+   unichar  *buffer = NSZoneMalloc(NULL, (1+length)*sizeof(unichar));
+   unichar  *unicode=buffer+1;
    NSUInteger byteLength=0;
    char    *bytes=NULL;
 
@@ -1413,15 +1430,21 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
     if(encoding == NSUnicodeStringEncoding)
     {
         buffer[0]=0xFEFF;
-        return [NSData dataWithBytes:buffer length:(1+length)*sizeof(unichar)];
+        NSData* result = [NSData dataWithBytes:buffer length:(1+length)*sizeof(unichar)];
+        NSZoneFree(NULL, buffer);
+        return result;
     }
     else {
         bytes=NSString_unicodeToAnyCString(encoding,unicode,length,lossy,&byteLength,zone,NO);
     }
-   if(bytes==NULL)
-    return nil;
+    if(bytes==NULL) {
+       NSZoneFree(NULL, buffer);
+      return nil;
+    }
 
-   return [NSData dataWithBytesNoCopy:bytes length:byteLength];
+    NSData* result =  [NSData dataWithBytesNoCopy:bytes length:byteLength];
+    NSZoneFree(NULL, buffer);
+    return result;
 }
 
 -(NSData *)dataUsingEncoding:(NSStringEncoding)encoding {
@@ -1434,16 +1457,22 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
 }
 
 -(const char *)UTF8String {
-   NSUInteger length=[self length],byteLength;
-   unichar  unicode[length];
-   char    *bytes;
-   
-   [self getCharacters:unicode];
-   
-   if((bytes=NSUnicodeToUTF8(unicode,length,NO,&byteLength,NULL,YES))==NULL)
-    return NULL;
-
-   return [[NSData dataWithBytesNoCopy:bytes length:byteLength] bytes];
+    NSZone  *zone=[self zone];
+    NSUInteger length=[self length];
+    unichar  *buffer = NSZoneMalloc(NULL, (1+length)*sizeof(unichar));
+    NSUInteger byteLength=0;
+    char    *bytes=NULL;
+    
+    [self getCharacters:buffer];
+    bytes=NSString_unicodeToAnyCString(NSUTF8StringEncoding,buffer,length,NO,&byteLength,zone,YES);
+    if(bytes==NULL) {
+        NSZoneFree(NULL, buffer);
+        return nil;
+    }
+    
+    NSData* result =  [NSData dataWithBytesNoCopy:bytes length:byteLength];
+    NSZoneFree(NULL, buffer);
+    return [result bytes];
 }
 
 -(NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
@@ -1568,14 +1597,14 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
 
 -(const char *)cStringUsingEncoding:(NSStringEncoding)encoding {
    NSUInteger length=[self length];
-   unichar buffer[length];
+   unichar   *buffer = NSZoneMalloc(NULL,length*sizeof(unichar));
    NSUInteger resultLength;
    
    [self getCharacters:buffer];
     char *cstr=NSString_unicodeToAnyCString(encoding, buffer,length,NO,&resultLength,NULL,YES);
     NSData *data=[NSData dataWithBytesNoCopy:cstr length:resultLength freeWhenDone:YES];
+    NSZoneFree(NULL, buffer);
     return cstr;
-    
 }
 
 -(BOOL)getCString:(char *)cString maxLength:(NSUInteger)maxLength encoding:(NSStringEncoding)encoding {
@@ -1646,15 +1675,15 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
 
 
 -(const char *)lossyCString {
-   NSUInteger  length=[self length];
-   unichar   unicode[length];
-   NSString *string;
-
-   [self getCharacters:unicode];
-
-   string=[NSString_cStringNewWithCharacters(NULL,unicode,length,YES) autorelease];
-
-   return [string cString];
+    NSUInteger length=[self length];
+    unichar   *buffer = NSZoneMalloc(NULL,length*sizeof(unichar));
+    NSUInteger resultLength;
+    
+    [self getCharacters:buffer];
+    char *cstr=NSString_unicodeToAnyCString(defaultEncoding(), buffer,length,YES,&resultLength,NULL,YES);
+    NSData *data=[NSData dataWithBytesNoCopy:cstr length:resultLength freeWhenDone:YES];
+    NSZoneFree(NULL, buffer);
+    return cstr;
 }
 
 @end

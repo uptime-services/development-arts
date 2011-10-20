@@ -20,6 +20,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import <Foundation/NSPlatform.h>
 #import <objc/runtime.h>
 #import <Foundation/NSRaiseException.h>
+#ifdef __APPLE__
+#import"OBJCRegisterModule_Darwin.h"
+#endif
 
 #import <objc/objc.h>
 #import <stdio.h>
@@ -134,10 +137,12 @@ NSModuleHandle NSLoadModule(const char *path) {
    }
 
    handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-   if (NSLastModuleError() != NULL){
+   if (handle == NULL){
        NSCLog(NSLastModuleError());
-       handle = NULL;
    }
+#ifdef __APPLE__    
+    OBJCRegisterModule_Darwin(path);
+#endif
 
    return handle;
 }
@@ -480,16 +485,14 @@ static NSMapTable *pathToObject=NULL;
 }
 
 -(BOOL)isLoaded {
-   NSUnimplementedMethod();
-   return 0;
+   return _isLoaded;
 }
 -(BOOL)preflightAndReturnError:(NSError **)error {
    NSUnimplementedMethod();
    return 0;
 }
 -(BOOL)loadAndReturnError:(NSError **)error {
-   NSUnimplementedMethod();
-   return 0;
+   return [self load];
 }
 
 /*
