@@ -22,10 +22,11 @@ BOOL NSObjectIsKindOfClass(id object,Class kindOf) {
    struct objc_class *class=object->isa;
 
    for(;;class=class->super_class){
-    if(kindOf==class)
+       if(class == Nil)
+           break;
+       if(kindOf==class)
      return YES;
-    if(class->isa->isa==class)
-     break;
+
    }
 
    return NO;
@@ -64,17 +65,17 @@ BOOL NSObjectIsKindOfClass(id object,Class kindOf) {
 }
 
 +(BOOL)isSubclassOfClass:(Class)cls {
-   Class check=self;
-   
-   do {
-    check=[check superclass];
+    Class	myClass;
     
-    if(check==cls)
-     return YES;
-     
-   }while(check!=[NSObject class]);
-   
-   return NO;
+    myClass = (Class)self;
+    while (myClass != Nil) {
+        if (myClass == cls) {
+            return YES;
+        }
+        myClass = myClass->super_class;
+    }
+    
+    return NO;
 }
 
 +(BOOL)instancesRespondToSelector:(SEL)selector {
@@ -120,6 +121,14 @@ BOOL NSObjectIsKindOfClass(id object,Class kindOf) {
    NSInvalidAbstractInvocation();
    return nil;
 }
+
++ (void)poseAsClass:(Class)aClass
+{
+    NSAutoreleasePool * pool = [NSAutoreleasePool new];
+    NSUnimplementedMethod();
+    [pool release];
+}
+
 
 +(NSString *)description {
    return NSStringFromClass(self);
