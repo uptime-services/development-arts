@@ -20,6 +20,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import <Foundation/NSPlatform.h>
 #import <objc/runtime.h>
 #import <Foundation/NSRaiseException.h>
+#ifdef __APPLE__
+#import"OBJCRegisterModule_Darwin.h"
+#endif
 
 #import <objc/objc.h>
 #include <stdio.h>
@@ -237,6 +240,9 @@ NSModuleHandle NSLoadModule(const char *path) {
    if (handle == NULL){
        NSCLog(NSLastModuleError());
    }
+#ifdef __APPLE__    
+    OBJCRegisterModule_Darwin(path);
+#endif
 
    return handle;
 }
@@ -381,7 +387,7 @@ static NSMapTable *pathToObject=NULL;
             }
             module[bufSize] = 0;
 #else
-            module = objc_mainImageName();
+            module = (char *)objc_mainImageName();
 #endif
         }
         NSString *path = [NSString stringWithUTF8String:module];

@@ -272,8 +272,7 @@ static CFAddressResolverThreadInfo *startResolverThreadIfNeeded(){
    asyncInfo->queue=NSZoneMalloc(NULL,sizeof(CFHostRequest *)*asyncInfo->queueCapacity);
 
    unsigned threadAddr;
-
-   _beginthreadex(NULL,0,addressResolverThread,asyncInfo,0,&threadAddr);
+   _beginthreadex(NULL,0,(void*)addressResolverThread,asyncInfo,0,&threadAddr);
   }
   pthread_mutex_unlock(&asyncCreationLock);
 
