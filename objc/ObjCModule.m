@@ -12,6 +12,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import "ObjCException.h"
 #import "objc_malloc.h"
 #import "objc_protocol.h"
+#ifdef __APPLE__
+#import "OBJCRegisterModule_Darwin.h"
+#endif
  
 #import <string.h>
 
@@ -192,10 +195,9 @@ int _NSGetExecutablePath(char *path,uint32_t *capacity) {
 
 void OBJCInitializeProcess() {
 #ifdef __APPLE__
-extern void OBJCInitializeProcess_Darwin(void);
-
-   OBJCInitializeProcess_Darwin();
+   OBJCRegisterModule_Darwin(NULL);
 #endif
+	
 }
 
 OBJCObjectFile *OBJCMainObjectFile(){
@@ -540,6 +542,10 @@ void OBJCQueueModule(OBJCModule *module) {
 #endif
 
    OBJCLinkClassTable();
+#ifndef __APPLE__
+
+   OBJCSendLoadMessages();
+#endif
 }
 
 void OBJCResetModuleQueue(void) {
