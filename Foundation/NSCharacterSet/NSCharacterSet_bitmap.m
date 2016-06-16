@@ -34,6 +34,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 @implementation NSCharacterSet_bitmap
 
+-initWithCharacterSet:(NSCharacterSet *)set {
+   NSUInteger i;
+
+   for(i=0;i<NSBitmapCharacterSetSize;i++)
+    _bitmap[i]=0x00;
+
+   for(i=0;i<0xFFFF;i++)
+    if([set characterIsMember:i])
+     bitmapSet(_bitmap,i);
+
+   return self;
+}
+
 -initWithData:(NSData *)data {
    const uint8_t *bytes=[data bytes];
    NSUInteger i;
