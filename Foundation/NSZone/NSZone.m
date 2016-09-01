@@ -94,6 +94,10 @@ id NSAllocateObject(Class class, NSUInteger extraBytes, NSZone *zone)
     }
 
     result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes) + (sizeof(REF_COUNT_TYPE) * 2);
+//MBa: !?! This thing returns a low pointer sometimes instead of NULL !?! 0x00000008 cannot be a valid pointer !!!
+    if (result < 0x100)
+        return NULL;
+
 #if defined(GCC_RUNTIME_3)
     object_setClass(result, class);
     // TODO As of gcc 4.6.2 the GCC runtime does not have support for C++ constructor calling.
@@ -123,7 +127,7 @@ void NSDeallocateObject(id object)
 #else
     object_cxxDestruct(object, object->isa);
 #endif
-    
+
 #if !defined(APPLE_RUNTIME_4)
     //delete associations
     objc_removeAssociatedObjects(object);
@@ -149,12 +153,12 @@ id NSCopyObject(id object, NSUInteger extraBytes, NSZone *zone)
 
 #if defined(GCC_RUNTIME_3) || defined(APPLE_RUNTIME_4)
     id result = NSAllocateObject(object_getClass(object), extraBytes, zone);
-
-    memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, class_getInstanceSize(object_getClass(object)) + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    if (result)
+        memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, class_getInstanceSize(object_getClass(object)) + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
 #else
     id result = NSAllocateObject(object->isa, extraBytes, zone);
-
-    memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, object->isa->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    if (result)
+        memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, object->isa->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
 #endif
 
     return result;
