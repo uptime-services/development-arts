@@ -93,10 +93,11 @@ id NSAllocateObject(Class class, NSUInteger extraBytes, NSZone *zone)
         zone = NSDefaultMallocZone();
     }
 
-    result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes) + (sizeof(REF_COUNT_TYPE) * 2);
-//MBa: !?! This thing returns a low pointer sometimes instead of NULL !?! 0x00000008 cannot be a valid pointer !!!
-    if (result < 0x100)
+    result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    if (result == NULL) {
         return NULL;
+    }
+    result += (sizeof(REF_COUNT_TYPE) * 2);
 
 #if defined(GCC_RUNTIME_3)
     object_setClass(result, class);
@@ -153,12 +154,14 @@ id NSCopyObject(id object, NSUInteger extraBytes, NSZone *zone)
 
 #if defined(GCC_RUNTIME_3) || defined(APPLE_RUNTIME_4)
     id result = NSAllocateObject(object_getClass(object), extraBytes, zone);
-    if (result)
+    if (result != NULL) {
         memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, class_getInstanceSize(object_getClass(object)) + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    }
 #else
     id result = NSAllocateObject(object->isa, extraBytes, zone);
-    if (result)
-        memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, object->isa->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    if (result != NULL) {
+        memcpy((REF_COUNT_TYPE *)result - 2, (REF_COUNT_TYPE *)object - 2, object->isa->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);  
+    }
 #endif
 
     return result;
