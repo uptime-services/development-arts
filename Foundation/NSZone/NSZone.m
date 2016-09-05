@@ -93,11 +93,19 @@ id NSAllocateObject(Class class, NSUInteger extraBytes, NSZone *zone)
         zone = NSDefaultMallocZone();
     }
 
-    result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
-    if (result == NULL) {
+    // Ticket #11764. The following line has to be like this, including the second term [+ (sizeof(REF_COUNT_TYPE) * 2)]
+    result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes) + (sizeof(REF_COUNT_TYPE) * 2);
+    // therefore we cannot check for NULL, the check has to look like this:
+    if (result == (sizeof(REF_COUNT_TYPE) * 2)) {
         return NULL;
     }
-    result += (sizeof(REF_COUNT_TYPE) * 2);
+
+    // This does not work
+    // result = NSZoneCalloc(zone, 1, class->instance_size + (sizeof(REF_COUNT_TYPE) * 2) + extraBytes);
+    // if (result == NULL) {
+    //     return NULL;
+    // }
+    // result += (sizeof(REF_COUNT_TYPE) * 2);
 
 #if defined(GCC_RUNTIME_3)
     object_setClass(result, class);
