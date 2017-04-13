@@ -1740,6 +1740,9 @@ U+2029 (Unicode paragraph separator), \r\n, in that order (also known as CRLF)
    unichar   *buffer = NSZoneMalloc(NULL,length*sizeof(unichar));
    NSUInteger resultLength;
 
+   if ( buffer == NULL ) {
+       [NSException raise:NSMallocException format:@"Out of memory in NSString.cStringUsingEncoding"];
+   }
    [self getCharacters:buffer];
     char *cstr=NSString_unicodeToAnyCString(encoding, buffer,length,NO,&resultLength,NULL,YES);
 

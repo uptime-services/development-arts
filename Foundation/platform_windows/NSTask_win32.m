@@ -29,6 +29,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 // private
 -(void)finalizeProcess{
 
+   isRunning=NO;
+
    if(_monitor!=nil){
     [[NSRunLoop currentRunLoop] removeInputSource:_monitor forMode: NSDefaultRunLoopMode];
     [_monitor setDelegate:nil];
@@ -166,25 +168,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
    if([standardError isKindOfClass:[NSPipe class]])
     [[standardError fileHandleForWriting] closeFile];
 
+   isRunning=YES;
    _monitor=[[NSHandleMonitor_win32 allocWithZone:NULL] initWithHandle:_processInfo.hProcess];
    [_monitor setDelegate:self];
    [[NSRunLoop currentRunLoop] addInputSource:_monitor forMode: NSDefaultRunLoopMode];
-}
-
--(BOOL)isRunning
-{
-    if ( _processInfo.hProcess != NULL) {
-        GetExitCodeProcess(_processInfo.hProcess, &_exitCode);
-        if (_exitCode == STILL_ACTIVE) {
-            return YES;
-        }
-        else {
-            return NO;
-        }
-    }
-    else {
-        return NO;
-    }
 }
 
 -(void)terminate {

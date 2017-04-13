@@ -41,6 +41,7 @@ NSString * const NSTaskDidTerminateNotification=@"NSTaskDidTerminateNotification
     standardInput=nil;
     standardOutput=nil;
     standardError=nil;
+    isRunning=NO;
    }
    return self;
 }
@@ -124,8 +125,7 @@ NSString * const NSTaskDidTerminateNotification=@"NSTaskDidTerminateNotification
 }
 
 -(BOOL)isRunning {
-    NSInvalidAbstractInvocation();
-    return NO;
+   return isRunning;
 }
 
 -(void)interrupt {

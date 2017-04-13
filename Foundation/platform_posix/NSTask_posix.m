@@ -206,6 +206,9 @@ void childSignalHandler(int sig) {
         exit(-1);
     }
     else if (_processID != -1) {
+
+        isRunning = YES;
+
         @synchronized(_liveTasks) {
             [_liveTasks addObject:self];
         }
@@ -221,21 +224,6 @@ void childSignalHandler(int sig) {
     else
         [NSException raise:NSInvalidArgumentException
                     format:@"fork() failed: %s", strerror(errno)];
-}
-
--(BOOL)isRunning
-{
-    if (_processID != 0) {
-        if (kill(_processID, 0) == 0) {
-            return YES;
-        }
-        else {
-            return NO;
-        }
-    }
-    else {
-        return  NO;
-    }
 }
 
 -(void)terminate {
