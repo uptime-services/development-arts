@@ -237,6 +237,7 @@ void childSignalHandler(int sig) {
 -(void)setTerminationStatus:(int)terminationStatus { _terminationStatus = terminationStatus; }
 
 -(void)taskFinished {    
+    isRunning = NO;
     @synchronized(_liveTasks) {
         [_liveTasks removeObject:self];
     }

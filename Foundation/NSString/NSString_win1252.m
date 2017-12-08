@@ -84,7 +84,7 @@ char *NSUnicodeToWin1252(const unichar *characters,NSUInteger length,
 
 	for(i=0;i<length;i++){
 
-		if(characters[i] <= 256 && !(characters[i] >= 0x80 && characters[i] <= 0x9F))
+		if(characters[i] <= 0xFF && !(characters[i] >= 0x80 && characters[i] <= 0x9F))
 			win1252[i]=characters[i];
 		else
 		{
@@ -151,7 +151,7 @@ NSUInteger NSGetWin1252CStringWithMaxLength(const unichar *characters,NSUInteger
     for(i=0;i<length && result<=maxLength;i++){
         const unichar code=characters[i];
 
-        if(code <= 256 && !(code >= 0x80 && code <= 0x9F))
+        if(code <= 0xFF && !(code >= 0x80 && code <= 0x9F))
             cString[result++]=code;
         else {
             unsigned char j;
